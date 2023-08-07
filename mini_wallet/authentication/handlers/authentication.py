@@ -21,3 +21,10 @@ def decode_jwt(token):
         return None
     except jwt.InvalidTokenError:
         return None
+    
+
+def get_token_from_header(request):
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    if auth_header.startswith('Token '):
+        token = auth_header[len('Token '):].strip()
+        return token

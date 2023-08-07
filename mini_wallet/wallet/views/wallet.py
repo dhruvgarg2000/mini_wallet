@@ -32,10 +32,11 @@ class AccountViewSet(viewsets.ViewSet):
                 else:
                     return Response({"message" : "User is inactive"})
 
+
 class WalletViewSet(viewsets.ViewSet):
 
     @check_wallet_enabled('disabled')
-    def create(self, user, wallet, request):
+    def create(self, request, user, wallet):
         '''Enable the wallet'''
         wallet.is_enabled = True
         wallet.enabled_at = datetime.now()
@@ -54,36 +55,14 @@ class WalletViewSet(viewsets.ViewSet):
             }
         }, status=status.HTTP_201_CREATED)
 
-    @check_wallet_enabled('enabled')
-    def list(self, user, wallet, request):
-        '''Get information of the wallet'''
-        pass
 
     @check_wallet_enabled('enabled')
-    @action(detail=False, methods=["get"])
-    def transactions(self, user, wallet, request):
-        '''Get all the transactions of the wallet'''
-        pass
-
-    @check_wallet_enabled('enabled')
-    @action(detail=False, methods=['post'])
-    def deposits(self, user, wallet, request):
-        '''Deposit the virtual money in the wallet'''
-        pass
-
-    @check_wallet_enabled('enabled')
-    @action(detail=False, methods=['post'])
-    def withdrawals(self, user, wallet, request):
-        '''Withdrawal the virtual money in the wallet'''
-        pass
-
-    @check_wallet_enabled('enabled')
-    def partial_update(self, user, wallet, request):
+    def partial_update(self, request, user, wallet):
         '''Disable the wallet'''
-        wallet.is_enabled = True
+        wallet.is_enabled = False
         wallet.enabled_at = datetime.now()
         wallet.save()
-        
+
         return Response({
             "status": "success",
             "data": {
@@ -96,6 +75,34 @@ class WalletViewSet(viewsets.ViewSet):
                 }
             }
         })
+
+
+    @check_wallet_enabled('enabled')
+    def list(self, request, user, wallet):
+        '''Get information of the wallet'''
+        pass
+
+
+    @check_wallet_enabled('enabled')
+    @action(detail=False, methods=["get"])
+    def transactions(self, request, user, wallet):
+        '''Get all the transactions of the wallet'''
+        pass
+
+
+    @check_wallet_enabled('enabled')
+    @action(detail=False, methods=['post'])
+    def deposits(self, request, user, wallet):
+        '''Deposit the virtual money in the wallet'''
+        pass
+
+
+    @check_wallet_enabled('enabled')
+    @action(detail=False, methods=['post'])
+    def withdrawals(self, request, user, wallet):
+        '''Withdrawal the virtual money in the wallet'''
+        pass
+
 
 # 1. Authentication middleware 
 # 2. Decorator which checks whether the account is created or not
