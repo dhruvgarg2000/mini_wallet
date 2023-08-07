@@ -2,11 +2,13 @@ from rest_framework.response import Response
 from rest_framework import  status
 from django.shortcuts import get_object_or_404
 from authentication.handlers.authentication import decode_jwt, get_token_from_header
+from functools import wraps
 
 from wallet.models import User, Wallet
 
 def check_wallet_enabled(wallet_status):
     def wallet_decorator(view_func):
+        @wraps(view_func)
         def wrapped_view(self, request, *args, **kwargs,):
             if wallet_status == 'disabled':
                 is_enabled = False

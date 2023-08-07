@@ -2,13 +2,11 @@ from rest_framework.response import Response
 from rest_framework import  status, viewsets
 from rest_framework.decorators import action
 from authentication.handlers.authentication import generate_jwt_token
-from wallet.decorators.wallet import check_wallet_enabled
+from wallet.decorators.check_wallet_status import check_wallet_enabled
 from wallet.models import Transactions, User, Wallet
-from wallet.serializers.wallet import AccountSerializer, DepositWithdrawalTransactionSerializer, DisableWalletSerializer, EnableWalletSerializer, WithdrawalTransactionSerializer
+from wallet.serializers.serailizer import AccountSerializer, DepositWithdrawalTransactionSerializer, DisableWalletSerializer, EnableWalletSerializer, WithdrawalTransactionSerializer, TransactionSerializer
 from django.shortcuts import get_object_or_404
 from datetime import datetime
-
-from wallet.serializers.transactions import TransactionSerializer
 
 class AccountViewSet(viewsets.ViewSet):
 
@@ -31,8 +29,7 @@ class AccountViewSet(viewsets.ViewSet):
                                 },
                                 "status": "success"
                             }, status=status.HTTP_201_CREATED)
-                else:
-                    return Response({"message" : "User is inactive"})
+                return Response({"message" : "User is inactive"})
 
 
 class WalletViewSet(viewsets.ViewSet):
@@ -54,7 +51,7 @@ class WalletViewSet(viewsets.ViewSet):
 
 
     @check_wallet_enabled('enabled')
-    def partial_update(self, request, user, wallet):
+    def partial_update(self, request, user, wallet, pk=None):
         '''Disable the wallet'''
         wallet.is_enabled = False
         wallet.updated_at = datetime.now()
@@ -73,28 +70,24 @@ class WalletViewSet(viewsets.ViewSet):
     @check_wallet_enabled('enabled')
     def list(self, request, user, wallet):
         '''Get information of the wallet'''
-        # if wallet.is_enabled:
-        #     serializer = EnableWalletSerializer(wallet)
-        #     return Response({
-        #         "status": "success",
-        #         "data": {
-        #             "wallet": serializer.data
-        #         }
-        #     })
-        # return Response({
-        #     "status": "fail",
-        #     "data": {
-        #         "error": "Wallet disabled"
-        #     }
-        #     })
-        transactions = Transactions.objects.filter(wallet=wallet)
-        serializer = TransactionSerializer(transactions, many=True)
-        return Response({"status" : "success",
-                        "data" : serializer.data})
+        if wallet.is_enabled:
+            serializer = EnableWalletSerializer(wallet)
+            return Response({
+                "status": "success",
+                "data": {
+                    "wallet": serializer.data
+                }
+            })
+        return Response({
+            "status": "fail",
+            "data": {
+                "error": "Wallet disabled"
+            }
+            })
 
 
+    @action(detail=False, methods=['get'])
     @check_wallet_enabled('enabled')
-    @action(detail=False, methods=["get"])
     def transactions(self, request, user, wallet):
         '''Get all the transactions of the wallet'''
         transactions = Transactions.objects.filter(wallet=wallet)
@@ -103,16 +96,17 @@ class WalletViewSet(viewsets.ViewSet):
                         "data" : serializer.data})
 
 
-    @check_wallet_enabled('enabled')
     @action(detail=False, methods=['post'])
+    @check_wallet_enabled('enabled')
     def deposits(self, request, user, wallet):
         '''Deposit the virtual money in the wallet'''
-        serializer = DepositWithdrawalTransactionSerializer(request.data)
+        serializer = DepositWithdrawalTransactionSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             amount = serializer.validated_data.get('amount')
             ref_id = serializer.validated_data.get('reference_id')
             wallet.balance += amount
-            transaction = Transactions.objects.create(balance=amount, transaction_type=1, status=2, reference_id=ref_id, wallet=wallet)
+            wallet.save()
+            transaction = Transactions.objects.create(amount=amount, transaction_type=1, status=1, reference_id=ref_id, wallet=wallet)
             serializer = WithdrawalTransactionSerializer(transaction)
             return Response({
                 "status": "success",
@@ -122,18 +116,19 @@ class WalletViewSet(viewsets.ViewSet):
             }, status=status.HTTP_201_CREATED)
 
 
-    @check_wallet_enabled('enabled')
     @action(detail=False, methods=['post'])
+    @check_wallet_enabled('enabled')
     def withdrawals(self, request, user, wallet):
         '''Withdrawal the virtual money in the wallet'''
-        serializer = DepositWithdrawalTransactionSerializer(request.data)
+        serializer = DepositWithdrawalTransactionSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             amount = serializer.validated_data.get('amount')
             ref_id = serializer.validated_data.get('reference_id')
             
             if wallet.balance >= amount:
                 wallet.balance -= amount
-                transaction = Transactions.objects.create(balance=amount, transaction_type=2, status=1, reference_id=ref_id, wallet=wallet)
+                wallet.save()
+                transaction = Transactions.objects.create(amount=amount, transaction_type=2, status=1, reference_id=ref_id, wallet=wallet)
                 
                 serializer = WithdrawalTransactionSerializer(transaction)
                 return Response({
@@ -142,10 +137,4 @@ class WalletViewSet(viewsets.ViewSet):
                         "withdrawal": serializer.data
                     }
                 }, status=status.HTTP_201_CREATED)
-            return ({"message" : "Insufficient Funds!!"})
-
-
-# 1. Authentication middleware 
-# 2. Decorator which checks whether the account is created or not
-# 3. Decorator which checks wallet is enabled or not
-# 4. Write the APIs
+            return Response({"message" : "Insufficient Funds!!"})
