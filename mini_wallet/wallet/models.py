@@ -28,18 +28,20 @@ class Transactions(models.Model):
     class Meta:
         db_table = 'transactions'
 
-    class TransactionTypeChoices(models.TextChoices):
-        CREDIT = 1, "Credit"
-        DEBIT = 2, "Debit"
+    TRANSACTION_TYPES = [
+        (1, "Credit"),
+        (2, "Debit")
+    ] 
 
-    class TransactionStatusChoices(models.TextChoices):
-        SUCCESS = 1, "Success"
-        FAILED = 2, "Failed"
+    TRANSACTION_STATUSES = [
+        (1, "Success"),
+        (2, "Failed")
+    ]
     
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    balance = models.IntegerField(default=0, null=False)
-    transaction_type = models.IntegerField(choices=TransactionTypeChoices.choices)
-    status = models.IntegerField(choices=TransactionStatusChoices.choices)
+    amount = models.IntegerField(default=0, null=False)
+    transaction_type = models.IntegerField(choices=TRANSACTION_TYPES)
+    status = models.IntegerField(choices=TRANSACTION_STATUSES)
     transaction_at = models.DateTimeField(auto_now_add=True)
     reference_id = models.UUIDField(editable=False, unique=True)
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
