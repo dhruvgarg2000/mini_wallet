@@ -16,7 +16,7 @@ class Wallet(models.Model):
     class Meta:
         db_table = 'wallet'
 
-    wallet_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     balance = models.IntegerField(default=0, null=False)
     is_enabled = models.BooleanField(default=False, null=False)
     created_at = models.DateTimeField(auto_now_add=True)

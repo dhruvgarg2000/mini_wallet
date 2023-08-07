@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework import routers
 
-from wallet.views.wallet import AccountViewSet
+from wallet.views.wallet import AccountViewSet, WalletViewSet
 
 router = routers.SimpleRouter()
 
@@ -10,10 +10,10 @@ router.register(
     AccountViewSet,
     basename="account")
 
-# router.register(
-#     r'wallet',
-#     WalletViewSet,
-#     basename="wallet")
+router.register(
+    r'wallet',
+    WalletViewSet,
+    basename="wallet")
 
 urlpatterns = [
 

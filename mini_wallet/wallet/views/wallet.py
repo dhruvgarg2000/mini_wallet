@@ -6,6 +6,7 @@ from wallet.decorators.wallet import check_wallet_enabled
 from wallet.models import User, Wallet
 from wallet.serializers.account import AccountSerializer
 from django.shortcuts import get_object_or_404
+from datetime import datetime
 
 class AccountViewSet(viewsets.ViewSet):
 
@@ -13,15 +14,15 @@ class AccountViewSet(viewsets.ViewSet):
         '''Create the account for the user'''
         serializer = AccountSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            cstm_id = serializer.data.get('customer_xid')
-            user = get_object_or_404(User, uuid=cstm_id)
+            user_id = serializer.data.get('customer_xid')
+            user = get_object_or_404(User, uuid=user_id)
             try:
                 Wallet.objects.get(owner=user)
                 return Response({"message" : "Account is already created!!"})
             except Wallet.DoesNotExist:
                 if user.is_active:
                     Wallet.objects.create(owner=user)
-                    token = generate_jwt_token(cstm_id)
+                    token = generate_jwt_token(user_id)
                     return Response({
                                 "data": {
                                     "token": token
@@ -34,37 +35,67 @@ class AccountViewSet(viewsets.ViewSet):
 class WalletViewSet(viewsets.ViewSet):
 
     @check_wallet_enabled('disabled')
-    def create(self, request):
+    def create(self, user, wallet, request):
         '''Enable the wallet'''
-        pass
+        wallet.is_enabled = True
+        wallet.enabled_at = datetime.now()
+        wallet.save()
+
+        return Response({
+            "status": "success",
+            "data": {
+                "wallet": {
+                "id": wallet.uuid,
+                "owned_by": user.uuid,
+                "status": "enabled" if wallet.is_enabled else "disabled",
+                "enabled_at": wallet.updated_at,
+                "balance": wallet.balance
+                }
+            }
+        }, status=status.HTTP_201_CREATED)
 
     @check_wallet_enabled('enabled')
-    def list(self, request):
+    def list(self, user, wallet, request):
         '''Get information of the wallet'''
         pass
 
     @check_wallet_enabled('enabled')
     @action(detail=False, methods=["get"])
-    def transactions(self, request):
+    def transactions(self, user, wallet, request):
         '''Get all the transactions of the wallet'''
         pass
 
     @check_wallet_enabled('enabled')
     @action(detail=False, methods=['post'])
-    def deposits(self, request):
+    def deposits(self, user, wallet, request):
         '''Deposit the virtual money in the wallet'''
         pass
 
     @check_wallet_enabled('enabled')
     @action(detail=False, methods=['post'])
-    def withdrawals(self, request):
+    def withdrawals(self, user, wallet, request):
         '''Withdrawal the virtual money in the wallet'''
         pass
 
     @check_wallet_enabled('enabled')
-    def partial_update(self, request):
+    def partial_update(self, user, wallet, request):
         '''Disable the wallet'''
-        pass
+        wallet.is_enabled = True
+        wallet.enabled_at = datetime.now()
+        wallet.save()
+        
+        return Response({
+            "status": "success",
+            "data": {
+                "wallet": {
+                "id": wallet.uuid,
+                "owned_by": user.uuid,
+                "status": "enabled" if wallet.is_enabled else "disabled",
+                "disabled_at": wallet.updated_at,
+                "balance": wallet.balance
+                }
+            }
+        })
 
 # 1. Authentication middleware 
 # 2. Decorator which checks whether the account is created or not
