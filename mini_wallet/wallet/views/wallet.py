@@ -1,12 +1,18 @@
+from datetime import datetime
+from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import  status, viewsets
 from rest_framework.decorators import action
 from authentication.handlers.authentication import generate_jwt_token
 from wallet.decorators.check_wallet_status import check_wallet_enabled
 from wallet.models import Transactions, User, Wallet
-from wallet.serializers.serailizer import AccountSerializer, DepositWithdrawalTransactionSerializer, DisableWalletSerializer, EnableWalletSerializer, WithdrawalTransactionSerializer, TransactionSerializer
-from django.shortcuts import get_object_or_404
-from datetime import datetime
+from wallet.serializers.serailizer import (AccountSerializer, 
+                                           DepositWithdrawalTransactionSerializer, 
+                                           DisableWalletSerializer, 
+                                           EnableWalletSerializer, 
+                                           TransactionSerializer, 
+                                           WithdrawalTransactionSerializer)
+
 
 class AccountViewSet(viewsets.ViewSet):
 
@@ -48,23 +54,6 @@ class WalletViewSet(viewsets.ViewSet):
                 "wallet": serializer.data
             }
         }, status=status.HTTP_201_CREATED)
-
-
-    @check_wallet_enabled('enabled')
-    def partial_update(self, request, user, wallet, pk=None):
-        '''Disable the wallet'''
-        wallet.is_enabled = False
-        wallet.updated_at = datetime.now()
-        wallet.save()
-
-        serializer = DisableWalletSerializer(wallet)
-
-        return Response({
-            "status": "success",
-            "data": {
-                "wallet": serializer.data
-            }
-        })
 
 
     @check_wallet_enabled('enabled')
@@ -138,3 +127,20 @@ class WalletViewSet(viewsets.ViewSet):
                     }
                 }, status=status.HTTP_201_CREATED)
             return Response({"message" : "Insufficient Funds!!"})
+
+
+    @check_wallet_enabled('enabled')
+    def partial_update(self, request, user, wallet):
+        '''Disable the wallet'''
+        wallet.is_enabled = False
+        wallet.updated_at = datetime.now()
+        wallet.save()
+
+        serializer = DisableWalletSerializer(wallet)
+
+        return Response({
+            "status": "success",
+            "data": {
+                "wallet": serializer.data
+            }
+        })

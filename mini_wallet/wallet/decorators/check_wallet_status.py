@@ -1,8 +1,8 @@
-from rest_framework.response import Response
-from rest_framework import  status
-from django.shortcuts import get_object_or_404
 from authentication.handlers.authentication import decode_jwt, get_token_from_header
 from functools import wraps
+from django.shortcuts import get_object_or_404
+from rest_framework.response import Response
+from rest_framework import  status
 
 from wallet.models import User, Wallet
 

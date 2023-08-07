@@ -1,5 +1,5 @@
-from django.http import JsonResponse
 from authentication.handlers.authentication import decode_jwt, get_token_from_header
+from django.http import JsonResponse
 from rest_framework import  status
 
 
