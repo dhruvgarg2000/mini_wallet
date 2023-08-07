@@ -36,11 +36,10 @@ class Transactions(models.Model):
         SUCCESS = 1, "Success"
         FAILED = 2, "Failed"
     
-    transaction_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     balance = models.IntegerField(default=0, null=False)
     transaction_type = models.IntegerField(choices=TransactionTypeChoices.choices)
     status = models.IntegerField(choices=TransactionStatusChoices.choices)
     transaction_at = models.DateTimeField(auto_now_add=True)
     reference_id = models.UUIDField(editable=False, unique=True)
-    wallet_id = models.ForeignKey(Wallet, on_delete=models.CASCADE)
-    user_uuid = models.ForeignKey(User, on_delete=models.CASCADE)
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
